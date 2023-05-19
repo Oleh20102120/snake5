@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game</title>
+  <style>
+    #game-board {
+      position: relative;
+      width: 90vw;
+      height: 90vw;
+      max-width: 600px;
+      max-height: 600px;
+      border: 1px solid #000;
+      margin: 0 auto;
+    }
+    .dot {
+      position: absolute;
+      width: calc(100% / 20);
+      height: calc(100% / 20);
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-board"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const gameBoard = document.getElementById('game-board');
+      const dotSize = Math.floor(gameBoard.offsetWidth / 20);
+      const boardSize = dotSize * 20;
+      const initialSnake = [{ x: 0, y: 0 }];
+      let direction = 'right';
+      let snake = [...initialSnake];
+      let apple = getRandomDotPosition();
+      let gameLoop;
+
+      function getRandomDotPosition() {
+        return {
+          x: Math.floor(Math.random() * (boardSize / dotSize)) * dotSize,
+          y: Math.floor(Math.random() * (boardSize / dotSize)) * dotSize
+        };
+      }
+
+      function drawDot(dot, color) {
+        const dotElement = document.createElement('div');
+        dotElement.className = 'dot';
+        dotElement.style.left = dot.x + 'px';
+        dotElement.style.top = dot.y + 'px';
+        dotElement.style.backgroundColor = color;
+        gameBoard.appendChild(dotElement);
+      }
+
+      function clearBoard() {
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach(dot => dot.remove());
+      }
+
+      function update() {
+        clearBoard();
+
+        const head = { x: snake[0].x, y: snake[0].y };
+        switch (direction) {
+          case 'up':
+            head.y -= dotSize;
+            break;
+          case 'down':
+            head.y += dotSize;
+            break;
+          case 'left':
+            head.x -= dotSize;
+            break;
+          case 'right':
+            head.x += dotSize;
+            break;
+        }
+
+        snake.unshift(head);
+
+        if (head.x === apple.x && head.y === apple.y) {
+          apple = getRandomDotPosition();
+        } else {
+          snake.pop();
+        }
+
+        snake.forEach((dot, index) => {
+          if (index === 0) {
+            drawDot(dot, '#ff0000'); // Draw head in red color
+          } else {
+            drawDot(dot, '#000000'); // Draw body in black color
+          }
+        });
+
+        drawDot(apple, '#00ff00'); // Draw apple in green color
+
+        if (
+          head.x < 0 ||
+          head.x >= boardSize ||
+          head.y < 0 ||
+          head.y >= boardSize ||
+          snake.some((dot, index) => index !== 0 && dot.x === head.x && dot.y === head.y)
+        ) {
+          clearInterval(gameLoop);
+          alert('Game over!');
+        }
+      }
+
+      function onKeyDown(event) {
+        const key = event.keyCode;
+        switch (key) {
+          case 37:
+            if (direction !== 'right') {
+              direction = 'left';
+            }
+            break;
+          case 38:
+            if (direction !== 'down') {
+              direction = 'up';
+            }
+            break;
+          case 39:
+            if (direction !== 'left') {
+              direction = 'right';
+            }
+            break;
+          case 40:
+            if (direction !== 'up') {
+              direction = 'down';
+            }
+            break;
+        }
+      }
+
+      function onTouchStart(event) {
+        const touch = event.touches[0];
+        const x = touch.clientX;
+        const y = touch.clientY;
+
+        const gameBoardRect = gameBoard.getBoundingClientRect();
+        const gameBoardLeft = gameBoardRect.left;
+        const gameBoardTop = gameBoardRect.top;
+
+        const relativeX = x - gameBoardLeft;
+        const relativeY = y - gameBoardTop;
+
+        const head = snake[0];
+        const deltaX = relativeX - head.x;
+        const deltaY = relativeY - head.y;
+
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          if (deltaX > 0 && direction !== 'left') {
+            direction = 'right';
+          } else if (deltaX < 0 && direction !== 'right') {
+            direction = 'left';
+          }
+        } else {
+          if (deltaY > 0 && direction !== 'up') {
+            direction = 'down';
+          } else if (deltaY < 0 && direction !== 'down') {
+            direction = 'up';
+          }
+        }
+      }
+
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('touchstart', onTouchStart);
+
+      gameLoop = setInterval(update, 200); // Update every 200ms for slower speed
+    });
+  </script>
+</body>
+</html>
